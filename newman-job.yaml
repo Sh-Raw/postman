@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postman-tests
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - name: newman
+        image: shrawan7777/my_app:latest
+        command: ["newman", "run", "my-api-tests.json"]
+      restartPolicy: Never
+  backoffLimit: 1
