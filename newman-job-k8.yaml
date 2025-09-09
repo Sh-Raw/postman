@@ -15,7 +15,5 @@ spec:
       restartPolicy: Never
       volumes:
       - name: report-volume
-        hostPath:
-          path: /tmp/newman-reports   # this folder will exist on the GitHub Actions runner
-          type: DirectoryOrCreate
+        emptyDir: {}
   backoffLimit: 1

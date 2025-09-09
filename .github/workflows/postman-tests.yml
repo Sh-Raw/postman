@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
+      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -49,11 +49,20 @@ jobs:
 
       # 9. Wait for Job to complete
       - name: Wait for Job completion
-        run: kubectl wait --for=condition=complete --timeout=300s job/newman-job-k8
+        run: |
+          kubectl wait --for=condition=complete --timeout=300s job/newman-job-k8
 
-      # 10. Upload Newman HTML report (direct from hostPath)
+      # 10. Copy Newman HTML report from pod
+      - name: Copy Newman report
+        run: |
+          # Get pod name
+          POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}")
+          echo "Copying report from pod $POD_NAME"
+          kubectl cp $POD_NAME:/reports/newman-report.html ./newman-report.html
+
+      # 11. Upload HTML report
       - name: Upload Newman HTML report
         uses: actions/upload-artifact@v4
         with:
           name: newman-html-report
-          path: /tmp/newman-reports/newman-report.html
+          path: newman-report.html
