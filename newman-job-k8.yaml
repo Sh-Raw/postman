@@ -15,5 +15,8 @@ spec:
       restartPolicy: Never
       volumes:
       - name: report-volume
-        emptyDir: {}
+        hostPath:
+          path: /tmp/newman-reports   # maps directly to runner
+          type: DirectoryOrCreate
   backoffLimit: 1
+
