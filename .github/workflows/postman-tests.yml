@@ -55,10 +55,10 @@ jobs:
       # 10. Copy Newman HTML report from pod
       - name: Copy Newman report
         run: |
-          # Get pod name
-          POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}")
-          echo "Copying report from pod $POD_NAME"
-          kubectl cp $POD_NAME:/reports/newman-report.html ./newman-report.html
+         POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}")
+         echo "Copying report from pod $POD_NAME"
+         kubectl cp default/$POD_NAME:/reports/newman-report.html ./newman-report.html -c newman
+
 
       # 11. Upload HTML report
       - name: Upload Newman HTML report
