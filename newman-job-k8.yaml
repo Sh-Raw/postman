@@ -16,3 +16,4 @@ spec:
       volumes:
       - name: report-volume
         emptyDir: {}
+  backoffLimit: 1
