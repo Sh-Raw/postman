@@ -16,7 +16,6 @@ spec:
       volumes:
       - name: report-volume
         hostPath:
-          path: /tmp/newman-reports   # maps directly to runner
+          path: /tmp/newman-reports   # this folder will exist on the GitHub Actions runner
           type: DirectoryOrCreate
   backoffLimit: 1
-
