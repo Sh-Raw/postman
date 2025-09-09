@@ -2,13 +2,17 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: newman-job-k8
-  namespace: default
 spec:
   template:
     spec:
       containers:
       - name: newman
         image: shrawan7777/my_app:latest
-        command: ["newman", "run", "/etc/newman/my-api-tests.json", "-r", "html", "--reporter-html-export", "/reports/newman-report.html"]
+        command: ["newman", "run", "my-api-tests.json", "-r", "html", "--reporter-html-export", "/reports/newman-report.html"]
+        volumeMounts:
+        - name: report-volume
+          mountPath: /reports
       restartPolicy: Never
-  backoffLimit: 1
+      volumes:
+      - name: report-volume
+        emptyDir: {}
