@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: postman-tests
+  name: newman-jobs-k8
   namespace: default
 spec:
   template:
