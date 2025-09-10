@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
+      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -47,45 +47,30 @@ jobs:
       - name: Apply Newman Job
         run: kubectl apply -f newman-job-k8.yaml
 
-      # 9. Wait for pod to exist
+      # 9. Wait for pod to be ready
       - name: Wait for Newman pod
         run: |
-          echo "Waiting for Newman pod to appear..."
-          MAX_WAIT=30
-          COUNT=0
-          POD_NAME=""
-          while [[ -z "$POD_NAME" && $COUNT -lt $MAX_WAIT ]]; do
-              kubectl get pods -A
-              POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
-              COUNT=$((COUNT + 1))
-              sleep 2
+          echo "Waiting for Newman pod to be ready..."
+          while [[ -z $(kubectl get pods -l job-name=newman-job-k8 -o 'jsonpath={.items[0].metadata.name}' 2>/dev/null) ]]; do
+            sleep 2
           done
-          if [[ -z "$POD_NAME" ]]; then
-              echo "Pod never appeared. Printing debug info:"
-              kubectl get pods -A
-              kubectl describe job newman-job-k8
-              exit 1
-          fi
-          echo "Pod detected: $POD_NAME"
+          POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o 'jsonpath={.items[0].metadata.name}')
+          echo "Pod is ready: $POD_NAME"
+          echo "::set-output name=pod_name::$POD_NAME"
 
-      # 10. Wait for container to be running
-      - name: Wait for container
-        run: |
-          echo "Waiting for container to be running..."
-          kubectl wait --for=condition=Ready pod/$POD_NAME --timeout=60s || echo "Container not ready yet"
-
-      # 11. Stream logs
+      # 10. Stream logs from the Newman pod
       - name: Stream Newman logs
         run: |
-          echo "Streaming logs from pod: $POD_NAME"
-          kubectl logs -f $POD_NAME -c newman || echo "Logs not available yet"
+          POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o 'jsonpath={.items[0].metadata.name}')
+          kubectl logs -f $POD_NAME -c newman
 
-      # 12. Copy HTML report (optional)
+      # 11. Copy HTML report (optional)
       - name: Copy Newman HTML report
         run: |
+          POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o 'jsonpath={.items[0].metadata.name}')
           kubectl cp $POD_NAME:/reports/newman-report.html ./newman-report.html -c newman || echo "Report copy failed"
 
-      # 13. Upload HTML report
+      # 12. Upload HTML report
       - name: Upload Newman HTML report
         uses: actions/upload-artifact@v4
         with:
