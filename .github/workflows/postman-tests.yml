@@ -47,25 +47,20 @@ jobs:
       - name: Apply Newman Job
         run: kubectl apply -f newman-job-k8.yaml
 
-      # 9. Debug: stream Newman logs
-      - name: Stream Newman logs
-        run: |
-          POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}")
-          echo "Streaming logs from pod $POD_NAME"
-          kubectl logs -f $POD_NAME || true
+     
 
-      # 10. Wait for Job completion
+      # 9. Wait for Job completion
       - name: Wait for Job completion
         run: kubectl wait --for=condition=complete --timeout=200s job/newman-job-k8
 
-      # 11. Copy Newman HTML report from pod
+      # 10. Copy Newman HTML report from pod
       - name: Copy Newman report
         run: |
           POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}")
           echo "Copying report from pod $POD_NAME"
           kubectl cp default/$POD_NAME:/reports/newman-report.html ./newman-report.html -c newman || true
 
-      # 12. Upload HTML report
+      # 11. Upload HTML report
       - name: Upload Newman HTML report
         uses: actions/upload-artifact@v4
         with:
