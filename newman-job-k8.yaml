@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
       - name: newman
-        image: my_app:latest
+        image: my_app:latest  # Will be loaded locally into KinD
         command: ["newman", "run", "/etc/newman/my-api-tests.json", "-r", "html", "--reporter-html-export", "/reports/newman-report.html"]
         volumeMounts:
         - name: report-volume
