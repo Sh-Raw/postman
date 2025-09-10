@@ -47,41 +47,45 @@ jobs:
       - name: Apply Newman Job
         run: kubectl apply -f newman-job-k8.yaml
 
-      # 9. Debug pods (important!)
-      - name: Debug pod status
-        run: |
-          kubectl get pods -A
-          kubectl describe pod -l job-name=newman-job-k8 || echo "No pod found yet"
-
-      # 10. Wait until pod is running or succeeded (with timeout)
+      # 9. Wait for pod to exist
       - name: Wait for Newman pod
         run: |
-          MAX_WAIT=60
+          echo "Waiting for Newman pod to appear..."
+          MAX_WAIT=30
           COUNT=0
           POD_NAME=""
           while [[ -z "$POD_NAME" && $COUNT -lt $MAX_WAIT ]]; do
-            POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
-            COUNT=$((COUNT + 1))
-            sleep 2
+              kubectl get pods -A
+              POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+              COUNT=$((COUNT + 1))
+              sleep 2
           done
           if [[ -z "$POD_NAME" ]]; then
-            echo "Pod never appeared, printing cluster debug info:"
-            kubectl get pods -A
-            kubectl describe job newman-job-k8 || echo "Job not found"
-            exit 1
+              echo "Pod never appeared. Printing debug info:"
+              kubectl get pods -A
+              kubectl describe job newman-job-k8
+              exit 1
           fi
-          echo "Pod is ready: $POD_NAME"
+          echo "Pod detected: $POD_NAME"
 
-      # 11. Stream logs from pod
+      # 10. Wait for container to be running
+      - name: Wait for container
+        run: |
+          echo "Waiting for container to be running..."
+          kubectl wait --for=condition=Ready pod/$POD_NAME --timeout=60s || echo "Container not ready yet"
+
+      # 11. Stream logs
       - name: Stream Newman logs
-        run: kubectl logs -f $POD_NAME
+        run: |
+          echo "Streaming logs from pod: $POD_NAME"
+          kubectl logs -f $POD_NAME -c newman || echo "Logs not available yet"
 
       # 12. Copy HTML report (optional)
       - name: Copy Newman HTML report
         run: |
           kubectl cp $POD_NAME:/reports/newman-report.html ./newman-report.html -c newman || echo "Report copy failed"
 
-      # 13. Upload report
+      # 13. Upload HTML report
       - name: Upload Newman HTML report
         uses: actions/upload-artifact@v4
         with:
