@@ -8,12 +8,16 @@ spec:
       containers:
       - name: newman
         image: my_app:latest
-        imagePullPolicy: IfNotPresent   # important for local KinD images
-        command: [
-          "newman", "run", "/etc/newman/my-api-tests.json",
-          "-r", "cli,html", 
-          "--reporter-html-export", "/reports/newman-report.html"
-        ]
+        command:
+          [
+            "newman",
+            "run",
+            "/etc/newman/my-api-tests.json",
+            "-r",
+            "html",
+            "--reporter-html-export",
+            "/reports/newman-report.html"
+          ]
         volumeMounts:
         - name: report-volume
           mountPath: /reports
