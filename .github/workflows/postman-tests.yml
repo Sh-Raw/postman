@@ -13,65 +13,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Log in to Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      # 2. Set up Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
 
-      # 3. Build Docker image
+      # 3. Build Docker image locally
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/my_app:latest .
+        run: docker build -t my_app:latest .
 
-      # 4. Push Docker image to Docker Hub
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/my_app:latest
-
-      # 5. Install kubectl
+      # 4. Install kubectl
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-      # 6. Install KinD
+      # 5. Install KinD
       - name: Install KinD
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
 
-      # 7. Create KinD cluster
+      # 6. Create KinD cluster
       - name: Create KinD cluster
         run: kind create cluster --name test-cluster
 
-      # 8. Load Docker image into KinD
+      # 7. Load Docker image into KinD
       - name: Load Docker image into KinD
-        run: kind load docker-image ${{ secrets.DOCKER_USERNAME }}/my_app:latest --name test-cluster
+        run: kind load docker-image my_app:latest --name test-cluster
 
-      # 9. Apply Kubernetes Job
+      # 8. Apply Newman Job manifest
       - name: Apply Newman Job
         run: kubectl apply -f newman-job-k8.yaml
 
-      # 10. Stream pod logs
+      # 9. Stream logs from the Job pod
       - name: Stream Newman logs
         run: |
+          # Wait until pod appears
           POD_NAME=""
-          # wait until pod appears
           while [ -z "$POD_NAME" ]; do
-            POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}" || echo "")
+            POD_NAME=$(kubectl get pods -l job-name=newman-job-k8 -o jsonpath="{.items[0].metadata.name}" 2>/dev/null || echo "")
             sleep 2
           done
           echo "Streaming logs from pod: $POD_NAME"
           kubectl logs -f $POD_NAME
 
-      # 11. Copy Newman HTML report
+      # 10. Copy HTML report from pod
       - name: Copy Newman HTML report
         run: |
           kubectl cp $POD_NAME:/reports/newman-report.html ./newman-report.html -c newman || echo "Report copy failed"
 
-      # 12. Upload HTML report as artifact
+      # 11. Upload HTML report
       - name: Upload Newman HTML report
         uses: actions/upload-artifact@v4
         with:
