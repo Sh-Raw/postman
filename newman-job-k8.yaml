@@ -7,19 +7,10 @@ spec:
     spec:
       containers:
       - name: newman
-        image: shrawan7777/my_app:latest
-        command: ["newman", "run", "/etc/newman/my-api-tests.json", "-r", "html", "--reporter-html-export", "/reports/newman-report.html"]
+        image: my_app:latest   # uses the local KinD-loaded image
         volumeMounts:
         - name: report-volume
           mountPath: /reports
-
-      - name: report-holder
-        image: busybox
-        command: ["sh", "-c", "sleep 3600"]
-        volumeMounts:
-        - name: report-volume
-          mountPath: /reports
-
       restartPolicy: Never
       volumes:
       - name: report-volume
