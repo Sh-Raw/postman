@@ -7,7 +7,9 @@ spec:
     spec:
       containers:
       - name: newman
-        image: my_app:latest   # uses the local KinD-loaded image
+        image: shrawan7777/my_app:latest
+        # Use the same path as in Dockerfile
+        command: ["newman", "run", "/etc/newman/my-api-tests.json", "-r", "html", "--reporter-html-export", "/reports/newman-report.html"]
         volumeMounts:
         - name: report-volume
           mountPath: /reports
